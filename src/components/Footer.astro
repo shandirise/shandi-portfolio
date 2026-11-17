@@ -1,0 +1,49 @@
+---
+import Icon from './Icon.astro';
+import { profile } from '../data/profile';
+import { ui } from '../data/ui';
+import type { Lang } from '../data/types';
+import { t } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="foot__bar wrap">
+    <span class="mono-s muted">© {year} {profile.name}</span>
+    <span class="mono-s muted">{profile.locationShort} · EN / ID</span>
+    <a class="tlink foot__top" href="#top" style="--nx:0px;--ny:-3px">
+      <span class="tlink__label">{t(ui.backToTop, lang)}</span>
+      <Icon name="arrow-up" size={18} class="tlink__icon" />
+    </a>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    background: var(--bg-deep);
+  }
+  .foot__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 100px;
+    padding-block: 28px;
+  }
+  @media (max-width: 1023px) {
+    .foot__bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding-block: 24px;
+    }
+    .foot__top {
+      margin-top: 8px;
+    }
+  }
+</style>

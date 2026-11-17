@@ -1,0 +1,487 @@
+---
+import Button from '../Button.astro';
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import { hero } from '../../data/hero';
+import { profile } from '../../data/profile';
+import { cvHref } from '../../lib/cv-files';
+import { ui } from '../../data/ui';
+import type { Lang } from '../../data/types';
+import { pad2, t } from '../../lib/i18n';
+import { visibleSections } from '../../lib/derive';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const sections = visibleSections();
+const [line1, line2] = profile.heroName;
+const chars = (word: string, offset = 0) =>
+  [...word].map((c, i) => ({ c, i: i + offset }));
+
+const now = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  timeZone: profile.timezone,
+}).format(new Date());
+---
+
+<section class="hero" id="top">
+  <!-- 12-column grid lines that draw down on load -->
+  <div class="hero__cols wrap g12" aria-hidden="true">
+    {Array.from({ length: 12 }, (_, i) => <span style={`--i:${i}`} />)}
+    <span class="hero__col-end" style="--i:12"></span>
+  </div>
+
+  <div class="hero__meta wrap g12">
+    <div class="meta meta--edition" data-reveal="fade" style="--i:1">
+      <span class="mono-s muted">{hero.edition.key}</span>
+      <span class="mono-s">{t(hero.edition.value, lang)}</span>
+    </div>
+    <div class="meta meta--role" data-reveal="fade" style="--i:2">
+      <span class="mono-s muted">{t(ui.role, lang)}</span>
+      <span class="mono-s">{profile.role}</span>
+    </div>
+    <div class="meta meta--based" data-reveal="fade" style="--i:3">
+      <span class="mono-s muted">{t(ui.basedIn, lang)}</span>
+      <span class="mono-s">{t(profile.location, lang)}</span>
+    </div>
+    <div class="meta meta--time" data-reveal="fade" style="--i:4">
+      <span class="mono-s muted">{t(ui.localTime, lang)}</span>
+      <span class="mono-s meta__time">
+        <span class="live-dot"></span>
+        <time data-clock data-tz={profile.timezone} data-label={profile.timezoneLabel}>
+          {now} {profile.timezoneLabel}
+        </time>
+      </span>
+    </div>
+  </div>
+
+  <h1 class="sr-only">{profile.name} — {profile.role}</h1>
+
+  <RowLine tone="strong" />
+  <div class="hero__names">
+  <div class="hero__row hero__row--1 wrap g12">
+    <p class="hero__name" aria-hidden="true" data-reveal="chars">
+      {chars(line1).map(({ c, i }) => <span class="char" style={`--i:${i}`}>{c}</span>)}
+    </p>
+    <a class="latest" href={hero.latest.href} target="_blank" rel="noopener" data-reveal="wipe" style="--i:4">
+      <span class="latest__top">
+        <span class="mono-s">{t(hero.latest.kicker, lang)}</span>
+        <Icon name="arrow-up-right" size={22} class="latest__icon" />
+      </span>
+      <span class="latest__body">
+        <span class="latest__title">{hero.latest.title}</span>
+        <span class="small">{t(hero.latest.text, lang)}</span>
+      </span>
+    </a>
+  </div>
+  <RowLine tone="strong" class="hero__rule-a" />
+  <div class="hero__row hero__row--2 wrap g12">
+    <p class="hero__name" aria-hidden="true" data-reveal="chars">
+      {chars(line2, line1.length).map(({ c, i }) => <span class="char" style={`--i:${i}`}>{c}</span>)}
+    </p>
+  </div>
+  <RowLine tone="strong" class="hero__rule-b" />
+  </div>
+
+  <div class="hero__intro wrap g12">
+    <div class="intro">
+      <p class="intro__summary" data-reveal style="--i:6">{t(hero.summary, lang)}</p>
+      <p class="intro__avail mono-s" data-reveal style="--i:7">
+        <span class="intro__mark" aria-hidden="true"></span>
+        {t(hero.availability, lang)}
+      </p>
+      <div class="intro__actions" data-reveal style="--i:8">
+        <Button href="#work" icon="arrow-down" class="intro__btn">{t(ui.seeMyWork, lang)}</Button>
+        <Button href={cvHref(lang)} variant="secondary" icon="download" download class="intro__btn">
+          {t(ui.downloadCV, lang)}
+        </Button>
+      </div>
+    </div>
+
+    <nav class="contents" aria-label={t(ui.contents, lang)}>
+      <p class="mono-s muted" data-reveal="fade" style="--i:6">{t(ui.contents, lang)}</p>
+      <ol>
+        {
+          sections.map((s, i) => (
+            <li data-reveal="fade" style={`--i:${7 + i * 0.6}`}>
+              <a href={`#${s.id}`} data-nav={s.id}>
+                <span class="contents__label">{t(s.title, lang)}</span>
+                <span class="mono-s contents__num">{pad2(s.num)}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+  </div>
+
+  <RowLine />
+  <dl class="hero__stats wrap g12">
+    {
+      hero.stats.map((s, i) => (
+        <div class:list={['stat-cell', s.highlight && 'stat-cell--hl']} data-reveal style={`--i:${i}`}>
+          <dt class="sr-only">{t(s.label, lang)}</dt>
+          <dd class:list={['stat', s.highlight && 'stat--accent']} data-count={s.value}>
+            {s.value}
+          </dd>
+          <dd class="mono-s" aria-hidden="true">
+            {t(s.label, lang)}
+          </dd>
+          <dd class="small muted">{t(s.note, lang)}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <RowLine />
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: clip;
+    isolation: isolate; /* own layer stack, so the grid below can sit under everything */
+  }
+
+  /* Column grid lines — always the bottom layer of the hero, behind the
+     name, cards and text at every screen size (as in the Figma file). */
+  .hero__cols {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .hero__cols span {
+    height: 100%;
+    border-left: 1px solid rgb(57 62 70 / 0.6);
+    transform-origin: top;
+  }
+  .hero__col-end {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: var(--pad-x);
+  }
+  :global(.js) .hero__cols span {
+    transform: scaleY(0);
+    animation: draw-down 1.6s var(--ease-in-out) forwards;
+    animation-delay: calc(var(--i) * 45ms);
+  }
+  @keyframes draw-down {
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  /* Meta row */
+  .hero__meta {
+    position: relative;
+    padding-block: 28px 24px;
+    row-gap: 16px;
+  }
+  .meta {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .meta__time {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Name rows */
+  .hero__row {
+    position: relative;
+    min-height: clamp(76px, 14.7vw, 212px);
+  }
+  .hero__name {
+    grid-column: 1 / span 8;
+    align-self: start;
+    padding-block: clamp(10px, 1.53vw, 22px) clamp(10px, 1.25vw, 18px);
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(44px, 6px + 13.5vw, 200px);
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    /* room so the clipped letters don't lose their edges */
+    padding-inline-end: 0.05em;
+  }
+  .hero__row--2 .hero__name {
+    grid-column: 1 / span 11;
+  }
+  .char {
+    display: inline-block;
+  }
+  :global(.js) .hero__name .char {
+    transform: translate3d(0, 105%, 0);
+    transition: transform 1.1s var(--ease-out);
+    transition-delay: calc(250ms + var(--i) * 45ms);
+  }
+  :global(.js) .hero__name:global(.is-in) .char {
+    transform: none;
+  }
+  :global(.js) .hero__name[data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Latest-work card */
+  .latest {
+    grid-column: 9 / -1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 22px 24px 24px;
+    background: var(--accent);
+    color: var(--ink);
+    transition: background-color 0.4s;
+  }
+  .latest:hover {
+    background: var(--accent-hover);
+  }
+  .latest__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  :global(.latest__icon) {
+    transition: transform 0.5s var(--ease-out);
+  }
+  .latest:hover :global(.latest__icon) {
+    transform: translate3d(3px, -3px, 0);
+  }
+  .latest__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .latest__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(24px, 19px + 0.9vw, 32px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  /* Intro */
+  .hero__intro {
+    position: relative;
+    padding-block: 56px 64px;
+    row-gap: 40px;
+  }
+  .intro {
+    grid-column: 1 / span 7;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .intro__summary {
+    font-size: clamp(17px, 15.9px + 0.29vw, 20px);
+    line-height: 1.5;
+    max-width: 40em;
+  }
+  .intro__avail {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--accent-text);
+  }
+  .intro__mark {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    margin-top: 3px;
+    background: var(--accent);
+  }
+  .intro__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  /* Contents */
+  .contents {
+    grid-column: 10 / -1;
+  }
+  .contents ol {
+    margin-top: 0;
+  }
+  .contents a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+  .contents li:first-child a {
+    border-top: 1px solid var(--line);
+  }
+  .contents a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 1px;
+    width: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s var(--ease-out);
+  }
+  .contents__label {
+    transition: transform 0.45s var(--ease-out);
+  }
+  .contents__num {
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+  .contents a:hover::before,
+  .contents a:global(.is-active)::before {
+    transform: scaleX(1);
+  }
+  .contents a:hover .contents__label {
+    transform: translateX(8px);
+  }
+  .contents a:hover .contents__num,
+  .contents a:global(.is-active) .contents__num {
+    color: var(--accent-text);
+  }
+
+  /* Stats */
+  .hero__stats {
+    position: relative;
+  }
+  .stat-cell {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 28px 24px 32px;
+    border-inline: 1px solid var(--line);
+  }
+  .stat-cell--hl {
+    background: var(--surface);
+  }
+  .stat--accent {
+    color: var(--accent);
+  }
+  .stat-cell .stat {
+    margin-bottom: 0;
+  }
+
+  /* ── Tablet & phone ─────────────────────────────────── */
+  @media (max-width: 1023px) {
+    .hero__cols span:not(:nth-child(3n + 1)):not(.hero__col-end) {
+      display: none;
+    }
+    .hero__meta {
+      padding-block: 20px 18px;
+    }
+    .meta {
+      grid-column: span 6;
+      gap: 4px;
+    }
+    .meta--role {
+      order: 1;
+    }
+    .meta--time {
+      order: 2;
+    }
+    .meta--based {
+      order: 3;
+    }
+    .meta--edition {
+      order: 4;
+    }
+    /* Phone order (as in the design): SHANDI, rule, HIMAWAN., rule, blue card */
+    .hero__names {
+      display: flex;
+      flex-direction: column;
+    }
+    .hero__row {
+      display: contents;
+    }
+    .hero__name {
+      padding-inline: var(--pad-x);
+    }
+    .hero__row--1 .hero__name {
+      order: 1;
+    }
+    .hero__names > :global(.hero__rule-a) {
+      order: 2;
+    }
+    .hero__row--2 .hero__name {
+      order: 3;
+    }
+    .hero__names > :global(.hero__rule-b) {
+      order: 4;
+    }
+    .latest {
+      order: 5;
+      padding: 16px var(--pad-x) 18px;
+      gap: 8px;
+    }
+    .hero__intro {
+      padding-block: 28px 32px;
+    }
+    .intro,
+    .contents {
+      grid-column: 1 / -1;
+    }
+    .intro {
+      gap: 16px;
+    }
+    .intro__actions {
+      width: 100%;
+      margin-top: 0;
+    }
+    .contents {
+      display: none;
+    }
+    .stat-cell {
+      grid-column: span 6;
+      padding: 20px 14px 22px 0;
+      border: 0;
+      gap: 6px;
+    }
+    .stat-cell:nth-child(even) {
+      padding-left: 14px;
+      border-left: 1px solid var(--line);
+    }
+    .stat-cell:nth-child(n + 3) {
+      border-top: 1px solid var(--line);
+    }
+    .stat-cell--hl {
+      margin-left: calc(var(--pad-x) * -1);
+      padding-left: var(--pad-x);
+    }
+    .stat-cell--hl:nth-child(even) {
+      margin-left: 0;
+      margin-right: calc(var(--pad-x) * -1);
+      padding-left: 14px;
+    }
+    .hero__stats {
+      column-gap: 0;
+    }
+  }
+  @media (max-width: 640px) {
+    .intro__actions :global(.intro__btn) {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+</style>

@@ -1,0 +1,19 @@
+---
+/* The thin horizontal rule with "+" marks on the grid's quarter lines —
+   the signature detail of the design. It draws itself in on scroll. */
+interface Props {
+  tone?: 'default' | 'strong' | 'on-accent';
+  class?: string;
+}
+const { tone = 'default', class: className } = Astro.props;
+---
+
+<div class:list={['rowline', `rowline--${tone}`, className]} data-reveal="line" aria-hidden="true">
+  <div class="rowline__marks">
+    <span class="plus" style="--i:0"></span>
+    <span class="plus" style="--i:1"></span>
+    <span class="plus" style="--i:2"></span>
+    <span class="plus" style="--i:3"></span>
+    <span class="plus plus--end" style="--i:4"></span>
+  </div>
+</div>

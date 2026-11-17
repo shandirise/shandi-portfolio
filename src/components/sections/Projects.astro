@@ -1,0 +1,202 @@
+---
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import TextLink from '../TextLink.astro';
+import { projects } from '../../data/projects';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { shouldShow } from '../../lib/assets';
+import { fill, pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const dek = fill(t(section.dek, lang), { count: projects.length }, lang);
+
+const linkLabels = { site: ui.linkSite, demo: ui.linkDemo, code: ui.linkCode } as const;
+const linksOf = (p: (typeof projects)[number]) =>
+  (['site', 'demo', 'code'] as const)
+    .filter((k) => p.links && k in p.links && shouldShow(p.links[k]))
+    .map((k) => ({ href: p.links![k] ?? '', label: t(linkLabels[k], lang) }));
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={dek} rule={false} />
+
+  <div class="thead wrap g12 mono-s muted" aria-hidden="true">
+    <span class="c-no">{ui.colNo}</span>
+    <span class="c-project">{t(ui.colProject, lang)}</span>
+    <span class="c-stack">{t(ui.colStack, lang)}</span>
+    <span class="c-year">{t(ui.colYear, lang)}</span>
+    <span class="c-links">{t(ui.colLinks, lang)}</span>
+  </div>
+  <RowLine tone="strong" />
+
+  <ol class="plist">
+    {
+      projects.map((p, i) => {
+        const links = linksOf(p);
+        return (
+          <li class="prow">
+            <div class="prow__inner wrap g12" data-reveal style={`--i:${i % 3}`}>
+              <span class="c-no mono-m prow__no">{pad2(i + 1)}</span>
+              <div class="c-project prow__main">
+                <h3 class="title-m">{t(p.name, lang)}</h3>
+                <p class="muted prow__desc">{t(p.description, lang)}</p>
+                <span class="mono-s accent-text prow__type">{t(p.type, lang)}</span>
+              </div>
+              <p class="c-stack mono-m prow__stack">{p.stack.join(' / ')}</p>
+              <span class="c-year mono-m muted prow__year">{p.year}</span>
+              <div class="c-links prow__links">
+                {links.length ? (
+                  links.map((l) => <TextLink href={l.href}>{l.label}</TextLink>)
+                ) : (
+                  <span class="mono-m prow__none" aria-label="No public link">
+                    —
+                  </span>
+                )}
+              </div>
+              {/* phone-only meta line */}
+              <p class="prow__meta mono-s" aria-hidden="true">
+                <span class="accent-text">{pad2(i + 1)}</span>
+                <span class="accent-text">{t(p.type, lang)}</span>
+                <span class="muted">{p.year}</span>
+              </p>
+            </div>
+            <RowLine />
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>
+
+<style>
+  .thead {
+    padding-bottom: 12px;
+  }
+  .c-no {
+    grid-column: 1 / span 1;
+  }
+  .c-project {
+    grid-column: 2 / span 5;
+  }
+  .c-stack {
+    grid-column: 7 / span 3;
+  }
+  .c-year {
+    grid-column: 10 / span 1;
+  }
+  .c-links {
+    grid-column: 11 / -1;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .prow {
+    position: relative;
+    isolation: isolate;
+  }
+  /* Hover: a surface band slides in behind the row */
+  .prow::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 1px 0;
+    z-index: -1;
+    background: var(--surface);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.55s var(--ease-out);
+  }
+  .prow:hover::before {
+    transform: scaleY(1);
+  }
+  .prow__inner {
+    padding-block: 28px;
+    align-items: start;
+  }
+  .prow__no {
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+  .prow:hover .prow__no {
+    color: var(--accent-text);
+  }
+  .prow__main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .prow__main h3 {
+    transition: transform 0.5s var(--ease-out);
+  }
+  .prow:hover .prow__main h3 {
+    transform: translateX(6px);
+  }
+  .prow__links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0 20px;
+    margin-top: -12px;
+  }
+  .prow__none {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--line-strong);
+  }
+  .prow__meta {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .thead {
+      display: none;
+    }
+    .prow__inner {
+      padding-block: 22px;
+      row-gap: 8px;
+    }
+    .prow__meta {
+      display: flex;
+      gap: 12px;
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .c-no,
+    .c-year,
+    .prow__type {
+      display: none;
+    }
+    .c-project,
+    .c-stack,
+    .c-links {
+      grid-column: 1 / -1;
+      justify-self: start;
+      text-align: left;
+    }
+    .prow__main h3 {
+      font-size: 24px;
+    }
+    .prow__desc {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .prow__stack {
+      font-size: 12px;
+      line-height: 16px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .prow__links {
+      justify-content: flex-start;
+      margin-top: -4px;
+    }
+    .prow__none {
+      display: none;
+    }
+  }
+</style>

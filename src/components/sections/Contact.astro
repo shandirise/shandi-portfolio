@@ -1,0 +1,256 @@
+---
+import Button from '../Button.astro';
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import { contact } from '../../data/contact';
+import { profile } from '../../data/profile';
+import { cvHref } from '../../lib/cv-files';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { exists, isDev } from '../../lib/assets';
+import { pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const lines = t(contact.headline, lang).split('\n');
+// Cells with a link show only when the link is filled in (dev shows placeholders).
+const cells = contact.cells.filter((c) => c.href === undefined || exists(c.href) || isDev);
+---
+
+<section class="contact" id={section.id}>
+  <div class="contact__index wrap" data-reveal="fade">
+    <span class="mono-m">({pad2(section.num)})</span>
+    <span class="mono-s">{t(section.title, lang)}</span>
+  </div>
+
+  <div class="contact__headline wrap">
+    <h2 class="contact__h2">
+      {
+        lines.map((line, i) => (
+          <span class="mask" data-reveal="mask" style={`--i:${i * 2}`}>
+            <span>{line}</span>
+          </span>
+        ))
+      }
+    </h2>
+  </div>
+
+  <RowLine tone="on-accent" />
+  <div class="contact__email wrap">
+    <div class="contact__mail">
+      <p class="lead" data-reveal>{t(contact.subline, lang)}</p>
+      <a class="contact__address" href={`mailto:${profile.email}`} data-reveal style="--i:1">
+        <span>{profile.email}</span>
+      </a>
+    </div>
+    <div class="contact__actions" data-reveal style="--i:2">
+      <Button href={`mailto:${profile.email}`} variant="dark" icon="mail">{t(ui.emailMe, lang)}</Button>
+      <Button href={cvHref(lang)} variant="outline-ink" icon="download" download>{t(ui.downloadCV, lang)}</Button>
+    </div>
+  </div>
+  <RowLine tone="on-accent" />
+
+  <ul class="contact__links wrap" style={`--n:${cells.length}`}>
+    {
+      cells.map((c, i) => {
+        const linked = c.href !== undefined;
+        const missing = linked && !exists(c.href);
+        const Tag = linked && !missing ? 'a' : 'div';
+        return (
+          <li data-reveal="fade" style={`--i:${i}`}>
+            <Tag
+              class:list={['cell', linked && 'cell--link', missing && 'is-missing']}
+              href={linked && !missing ? c.href : undefined}
+              target={linked && !missing ? '_blank' : undefined}
+              rel={linked && !missing ? 'noopener' : undefined}
+              title={missing ? `Missing: add your ${t(c.key, 'en')} link in src/data/profile.ts` : undefined}
+            >
+              <Icon name={c.icon} size={22} class="cell__icon" />
+              <span class="cell__text">
+                <span class="mono-s">{t(c.key, lang)}</span>
+                <span class="cell__value">{t(c.value, lang)}</span>
+              </span>
+              {linked && <Icon name="arrow-up-right" size={20} class="cell__arrow" />}
+            </Tag>
+          </li>
+        );
+      })
+    }
+  </ul>
+  <RowLine tone="on-accent" />
+  <div class="contact__end"></div>
+</section>
+
+<style>
+  .contact {
+    margin-top: clamp(88px, 11vw, 160px);
+    background: var(--accent);
+    color: var(--ink);
+    scroll-margin-top: var(--header-h);
+  }
+  .contact ::selection {
+    background: var(--ink);
+    color: var(--accent);
+  }
+  .contact__index {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: clamp(56px, 6.7vw, 96px);
+  }
+  .contact__headline {
+    padding-block: 24px 40px;
+  }
+  .contact__h2 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(48px, 20px + 9.15vw, 152px);
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+  }
+  /* extra room so descenders (the g in "together") aren't clipped by the reveal mask */
+  .contact__h2 .mask {
+    padding-bottom: 0.2em;
+    margin-bottom: -0.2em;
+  }
+
+  .contact__email {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px 40px;
+    padding-block: 40px 48px;
+  }
+  .contact__mail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .contact__address {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(26px, 13px + 3.55vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+  }
+  .contact__address span {
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0% 3px;
+    padding-bottom: 4px;
+    transition: background-size 0.6s var(--ease-out);
+  }
+  .contact__address:hover span {
+    background-size: 100% 3px;
+  }
+  .contact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    flex: none;
+  }
+
+  .contact__links {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    overflow: hidden; /* keeps the hover fill from showing below the cells */
+  }
+  .contact__links li + li .cell {
+    border-left: 1px solid var(--line-on-accent);
+  }
+  .cell {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+    padding: 24px 24px 24px 28px;
+    transition: color 0.45s var(--ease-out);
+  }
+  .contact__links li:first-child .cell {
+    padding-left: 0;
+  }
+  .cell--link::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--ink);
+    transform: translate3d(0, 101%, 0);
+    transition: transform 0.5s var(--ease-out);
+  }
+  .contact__links li:first-child .cell--link::before {
+    left: calc(var(--pad-x) * -1);
+  }
+  a.cell:hover {
+    color: var(--accent);
+  }
+  a.cell:hover::before {
+    transform: none;
+  }
+  :global(.cell__icon) {
+    flex: none;
+  }
+  .cell__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cell__value {
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 20px;
+  }
+  :global(.cell__arrow) {
+    flex: none;
+    transition: transform 0.45s var(--ease-out);
+  }
+  a.cell:hover :global(.cell__arrow) {
+    transform: translate3d(3px, -3px, 0);
+  }
+  .contact__end {
+    height: 72px;
+  }
+
+  @media (max-width: 1023px) {
+    .contact__email {
+      flex-direction: column;
+      align-items: flex-start;
+      padding-block: 28px 32px;
+    }
+    .contact__links {
+      grid-template-columns: 1fr;
+    }
+    .contact__links li + li .cell {
+      border-left: 0;
+      border-top: 1px solid var(--line-on-accent);
+    }
+    .cell,
+    .contact__links li:first-child .cell {
+      padding: 20px 0;
+    }
+    .cell--link::before,
+    .contact__links li:first-child .cell--link::before {
+      left: calc(var(--pad-x) * -1);
+      right: calc(var(--pad-x) * -1);
+    }
+    .contact__end {
+      height: 48px;
+    }
+  }
+  @media (max-width: 640px) {
+    .contact__actions {
+      width: 100%;
+    }
+    .contact__actions :global(.btn) {
+      flex: 1;
+      justify-content: space-between;
+    }
+  }
+</style>

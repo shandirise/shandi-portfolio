@@ -1,0 +1,176 @@
+---
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import Tag from '../Tag.astro';
+import TextLink from '../TextLink.astro';
+import { certificates } from '../../data/certificates';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { exists, isDev, url } from '../../lib/assets';
+import { pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={t(section.dek, lang)} />
+
+  {
+    certificates.map((c, i) => {
+      const pdfOk = exists(c.pdf);
+      const thumb = c.thumbnail && exists(c.thumbnail) ? c.thumbnail : '';
+      const Thumb = pdfOk ? 'a' : 'div';
+      return (
+        <>
+          {i > 0 && <RowLine />}
+          <article class="cert wrap g12">
+            <p class="cert__index mono-s muted" data-reveal="fade">
+              {pad2(i + 1)} / {pad2(certificates.length)}
+            </p>
+            <div class="cert__card" data-reveal="wipe">
+              <Thumb
+                class:list={['thumb', !pdfOk && isDev && 'is-missing']}
+                href={pdfOk ? url(c.pdf) : undefined}
+                target={pdfOk ? '_blank' : undefined}
+                rel={pdfOk ? 'noopener' : undefined}
+                aria-label={pdfOk ? t(ui.openCertificate, lang) : undefined}
+              >
+                {thumb ? (
+                  <img src={url(thumb)} alt="" loading="lazy" decoding="async" />
+                ) : (
+                  <span class="thumb__fallback" aria-hidden="true">
+                    <span class="thumb__lines">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                    <span class="mono-s muted">{t(ui.certificateThumb, lang)}</span>
+                    <span class="small muted">{t(ui.opensPdf, lang)}</span>
+                  </span>
+                )}
+              </Thumb>
+              <div class="cert__info">
+                <Tag>{c.tag}</Tag>
+                <h3 class="title-l">{t(c.title, lang)}</h3>
+                <p>{t(c.about, lang)}</p>
+                <ul class="cert__bullets">
+                  {c.bullets.map((b) => (
+                    <li>{t(b, lang)}</li>
+                  ))}
+                </ul>
+                <TextLink href={c.pdf}>{t(ui.openCertificate, lang)}</TextLink>
+              </div>
+            </div>
+          </article>
+        </>
+      );
+    })
+  }
+  <RowLine />
+</section>
+
+<style>
+  .cert__index {
+    grid-column: 1 / span 3;
+    padding-top: 32px;
+  }
+  .cert__card {
+    grid-column: 4 / -1;
+    display: flex;
+    gap: 40px;
+    padding: 32px;
+    background: var(--surface);
+  }
+  .thumb {
+    flex: none;
+    position: relative;
+    display: block;
+    width: 220px;
+    aspect-ratio: 210 / 297;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    transition:
+      transform 0.6s var(--ease-out),
+      border-color 0.4s,
+      box-shadow 0.6s var(--ease-out);
+  }
+  a.thumb:hover {
+    transform: translateY(-6px) rotate(-1.5deg);
+    border-color: var(--accent);
+    box-shadow: 0 24px 40px -20px rgb(0 0 0 / 0.6);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thumb__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 16px;
+  }
+  .thumb__lines {
+    position: absolute;
+    inset: 22px 22px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .thumb__lines span {
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .thumb__lines span:nth-child(2) {
+    width: 70%;
+  }
+  .thumb__lines span:nth-child(3) {
+    width: 45%;
+  }
+  .cert__info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: 0;
+  }
+  .cert__bullets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 1.2em;
+    list-style: disc;
+  }
+  .cert__bullets li::marker {
+    color: var(--accent-text);
+  }
+
+  @media (max-width: 1023px) {
+    .cert__index {
+      display: none;
+    }
+    .cert__card {
+      grid-column: 1 / -1;
+      flex-direction: column;
+      gap: 14px;
+      margin-inline: calc(var(--pad-x) * -1);
+      padding: 24px var(--pad-x) 20px;
+    }
+    .thumb {
+      width: 140px;
+    }
+    .thumb__lines {
+      inset: 14px 14px auto;
+    }
+  }
+</style>

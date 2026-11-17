@@ -1,0 +1,204 @@
+---
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import { photos } from '../../data/gallery';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { exists, isDev, url } from '../../lib/assets';
+import { pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+// Published site: only photos whose file exists. Dev: all of them (missing ones as placeholders).
+const shown = photos.filter((p) => exists(p.src) || isDev);
+const orientation = (r: number) => (r >= 1 ? 'landscape' : 'portrait');
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={t(section.dek, lang)} />
+
+  <ul class="photos wrap">
+    {
+      shown.map((p, i) => {
+        const ok = exists(p.src);
+        const caption = t(p.caption, lang);
+        return (
+          <li class="photo" style={`--r:${p.ratio}`}>
+            <button
+              class:list={['photo__frame', !ok && 'is-missing']}
+              type="button"
+              data-reveal="wipe"
+              style={`--i:${i}`}
+              data-photo={ok ? url(p.src) : undefined}
+              data-caption={caption}
+              disabled={!ok}
+              aria-label={`${t(ui.viewFull, lang)}: ${caption}`}
+            >
+              {ok ? (
+                <img src={url(p.src)} alt={t(p.alt ?? p.caption, lang)} loading="lazy" decoding="async" />
+              ) : (
+                <span class="photo__empty">
+                  <span class="mono-s muted">
+                    Photo · {p.ratio.toFixed(2).replace(/\.?0+$/, '')} {orientation(p.ratio)}
+                  </span>
+                  <span class="small muted">Add {p.src.replace(/^\//, 'public/')}</span>
+                </span>
+              )}
+            </button>
+            <p class="photo__caption" data-reveal="fade" style={`--i:${i + 2}`}>
+              <span class="mono-s accent-text">{pad2(i + 1)}</span>
+              <span class="small muted">{caption}</span>
+            </p>
+          </li>
+        );
+      })
+    }
+  </ul>
+  <RowLine />
+
+  <dialog class="lightbox" data-lightbox aria-label={t(ui.viewFull, lang)}>
+    <button class="lightbox__close" type="button" data-lightbox-close>
+      <span class="sr-only">{t(ui.close, lang)}</span>
+      <Icon name="close" size={24} />
+    </button>
+    <figure>
+      <img alt="" data-lightbox-img />
+      <figcaption class="small" data-lightbox-caption></figcaption>
+    </figure>
+  </dialog>
+</section>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  const img = dialog?.querySelector<HTMLImageElement>('[data-lightbox-img]');
+  const cap = dialog?.querySelector<HTMLElement>('[data-lightbox-caption]');
+
+  document.querySelectorAll<HTMLButtonElement>('[data-photo]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      if (!dialog || !img || !cap) return;
+      img.src = btn.dataset.photo || '';
+      img.alt = btn.dataset.caption || '';
+      cap.textContent = btn.dataset.caption || '';
+      dialog.showModal();
+    }),
+  );
+  dialog?.querySelector('[data-lightbox-close]')?.addEventListener('click', () => dialog.close());
+  // Click on the dark backdrop closes it too.
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+</script>
+
+<style>
+  .photos {
+    display: flex;
+    gap: var(--gap);
+    padding-block: 32px;
+  }
+  /* Justified row: widths follow each photo's ratio, so heights match. */
+  .photo {
+    flex: var(--r) 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .photo__frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--r);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    cursor: zoom-in;
+  }
+  .photo__frame:disabled {
+    cursor: default;
+  }
+  .photo__frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--ease-out) !important;
+  }
+  .photo__frame:not(:disabled):hover img {
+    transform: scale(1.04) !important;
+  }
+  .photo__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 16px;
+  }
+  .photo__caption {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+  }
+  /* Lightbox */
+  .lightbox {
+    max-width: min(92vw, 1400px);
+    max-height: 92vh;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--fg);
+    overflow: visible;
+  }
+  .lightbox::backdrop {
+    background: rgb(20 23 28 / 0.92);
+    backdrop-filter: blur(6px);
+  }
+  .lightbox[open] {
+    animation: lb-in 0.5s var(--ease-out);
+  }
+  @keyframes lb-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  .lightbox figure {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lightbox img {
+    max-width: 100%;
+    max-height: calc(92vh - 48px);
+    object-fit: contain;
+  }
+  .lightbox__close {
+    position: absolute;
+    top: -48px;
+    right: 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    transition: transform 0.4s var(--ease-out);
+  }
+  .lightbox__close:hover {
+    transform: rotate(90deg);
+  }
+
+  @media (max-width: 1023px) {
+    .photos {
+      flex-direction: column;
+      padding-block: 24px;
+    }
+    .photo {
+      flex: none;
+    }
+  }
+</style>

@@ -1,0 +1,278 @@
+---
+import BrandIcon from '../BrandIcon.astro';
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import { alsoComfortableWith, coreStack, softSkills } from '../../data/skills';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { findSkill, skillGroupsWithUsage } from '../../lib/derive';
+import { pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const groups = skillGroupsWithUsage();
+const core = coreStack.map((name) => ({ name, skill: findSkill(name) }));
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={t(section.dek, lang)} />
+
+  <div class="core">
+    <div class="core__inner wrap g12">
+      <div class="core__label" data-reveal="fade">
+        <p class="mono-s">{t(ui.coreStack, lang)}</p>
+        <p class="small muted">{t(ui.coreStackNote, lang)}</p>
+      </div>
+      <ul class="core__tiles">
+        {
+          core.map(({ name, skill }, i) => (
+            <li class="tile" data-reveal style={`--i:${i}`}>
+              <span class="tile__logo">
+                <BrandIcon slug={skill?.icon} monogram={skill?.monogram} size={36} />
+              </span>
+              <span class="small tile__name">{name}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+  <RowLine />
+
+  <div class="groups wrap g12">
+    {
+      groups.map((g, gi) => (
+        <details class="group" open data-skill-group={gi}>
+          <summary class="group__head">
+            <span class="mono-s">{t(g.name, lang)}</span>
+            <span class="mono-s muted">({pad2(g.items.length)})</span>
+            <Icon name="plus" size={18} class="group__icon" />
+          </summary>
+          <ul>
+            {g.items.map((s, i) => (
+              <li class="skill" data-reveal style={`--i:${i % 4}`}>
+                <span class="skill__logo">
+                  <BrandIcon slug={s.icon} monogram={s.monogram} size={20} />
+                </span>
+                <span class="skill__main">
+                  <span class="title-m">{s.name}</span>
+                  <span class="small muted">
+                    {s.usedIn.length
+                      ? `${t(ui.usedIn, lang)} ${s.usedIn.map((p) => t(p, lang)).join(', ')}`
+                      : t(ui.everyday, lang)}
+                  </span>
+                </span>
+                <span class:list={['mono-m skill__count', !s.usedIn.length && 'skill__count--none']}>
+                  {s.usedIn.length ? pad2(s.usedIn.length) : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))
+    }
+  </div>
+
+  <div class="extra wrap g12">
+    <dl class="kv extra__cell" data-reveal>
+      <dt>{t(ui.softSkills, lang)}</dt>
+      <dd class="body">{softSkills.map((s) => t(s, lang)).join(' · ')}</dd>
+    </dl>
+    <dl class="kv extra__cell" data-reveal style="--i:1">
+      <dt>{t(ui.alsoComfortable, lang)}</dt>
+      <dd class="body">{alsoComfortableWith.map((s) => t(s, lang)).join(' · ')}</dd>
+    </dl>
+  </div>
+</section>
+
+<script>
+  // On small screens only the first skill group starts open (as in the phone design).
+  const groups = document.querySelectorAll<HTMLDetailsElement>('[data-skill-group]');
+  const mq = window.matchMedia('(max-width: 1023px)');
+  const sync = () =>
+    groups.forEach((g, i) => {
+      g.open = !mq.matches || i === 0;
+    });
+  sync();
+  mq.addEventListener('change', sync);
+</script>
+
+<style>
+  /* Core stack band */
+  .core {
+    background: var(--surface);
+  }
+  .core__inner {
+    padding-block: 32px;
+    row-gap: 20px;
+  }
+  .core__label {
+    grid-column: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .core__tiles {
+    grid-column: 4 / -1;
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    column-gap: var(--gap);
+    row-gap: 16px;
+  }
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .tile__logo {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    transition:
+      border-color 0.4s,
+      color 0.4s,
+      transform 0.5s var(--ease-out);
+  }
+  .tile:hover .tile__logo {
+    border-color: var(--accent);
+    color: var(--accent-text);
+    transform: translateY(-4px);
+  }
+  .tile__name {
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* Skill groups */
+  .groups {
+    padding-top: 40px;
+    row-gap: 32px;
+  }
+  .group {
+    grid-column: span 4;
+  }
+  .group__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-strong);
+    list-style: none;
+    pointer-events: none;
+  }
+  .group__head::-webkit-details-marker {
+    display: none;
+  }
+  :global(.group__icon) {
+    display: none;
+    margin-left: auto;
+    transition: transform 0.5s var(--ease-out);
+  }
+  .group[open] :global(.group__icon) {
+    transform: rotate(45deg);
+  }
+  .skill {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .skill__logo {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    background: var(--surface);
+    transition:
+      background-color 0.35s,
+      color 0.35s;
+  }
+  .skill:hover .skill__logo {
+    background: var(--accent);
+    color: var(--ink);
+  }
+  .skill__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .skill__count {
+    flex: none;
+    color: var(--accent-text);
+    padding-top: 4px;
+  }
+  .skill__count--none {
+    color: var(--line-strong);
+  }
+
+  /* Soft skills / also comfortable */
+  .extra {
+    padding-top: 32px;
+    row-gap: 0;
+  }
+  .extra__cell {
+    grid-column: span 6;
+    padding-top: 14px;
+  }
+
+  @media (max-width: 1199px) {
+    .core__tiles {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 1023px) {
+    .core__inner {
+      padding-block: 20px 22px;
+    }
+    .core__label,
+    .core__tiles {
+      grid-column: 1 / -1;
+    }
+    .core__tiles {
+      grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+      column-gap: 16px;
+    }
+    .groups {
+      padding-top: 8px;
+      row-gap: 0;
+    }
+    .group {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid var(--line);
+    }
+    .group[open] {
+      border-bottom: 0;
+    }
+    .group__head {
+      pointer-events: auto;
+      cursor: pointer;
+      padding-block: 16px 12px;
+    }
+    :global(.group__icon) {
+      display: block;
+    }
+    .skill {
+      gap: 12px;
+      padding-block: 10px;
+    }
+    .extra {
+      padding-top: 0;
+    }
+    .extra__cell {
+      grid-column: 1 / -1;
+      padding-block: 10px;
+    }
+  }
+</style>

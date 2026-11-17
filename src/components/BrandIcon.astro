@@ -1,0 +1,44 @@
+---
+/* A technology logo (from simpleicons.org) or a short monogram when there is none. */
+import * as icons from 'simple-icons';
+
+interface Props {
+  slug?: string;
+  monogram?: string;
+  size?: number;
+}
+
+const { slug, monogram, size = 20 } = Astro.props;
+
+const key = slug ? `si${slug[0].toUpperCase()}${slug.slice(1)}` : '';
+const icon = key ? (icons as unknown as Record<string, { path: string; title: string }>)[key] : undefined;
+
+if (slug && !icon) {
+  console.warn(`[BrandIcon] No simple-icons logo for "${slug}". Check the slug on simpleicons.org or use a monogram.`);
+}
+const text = monogram ?? (slug ? slug.slice(0, 3).toUpperCase() : '?');
+---
+
+{
+  icon ? (
+    <svg class="brand" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d={icon.path} />
+    </svg>
+  ) : (
+    <span class="brand brand--mono" aria-hidden="true">{text}</span>
+  )
+}
+
+<style>
+  .brand {
+    display: block;
+    flex: none;
+  }
+  .brand--mono {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.02em;
+  }
+</style>

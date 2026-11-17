@@ -1,0 +1,318 @@
+---
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import Tag from '../Tag.astro';
+import TextLink from '../TextLink.astro';
+import { research } from '../../data/research';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { fill, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const abstract = t(research.abstract, lang).trim();
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={t(section.dek, lang)} />
+
+  <div class="paper wrap g12">
+    <aside class="paper__meta">
+      <p class="status mono-s" data-reveal="fade">
+        <span class="live-dot"></span>
+        {t(research.status, lang)}
+      </p>
+      <dl class="paper__facts">
+        <div class="kv" data-reveal style="--i:1">
+          <dt>{t(ui.authors, lang)}</dt>
+          <dd class="paper__lead">{research.authors[0]}</dd>
+          {research.authors.length > 1 && <dd>{fill(t(research.coAuthors, lang), { count: research.authors.length - 1 }, lang)}</dd>}
+        </div>
+        <div class="kv" data-reveal style="--i:2">
+          <dt>{t(ui.journal, lang)}</dt>
+          <dd>{research.journal}</dd>
+          {research.issn && <dd>{research.issn}</dd>}
+        </div>
+        <div class="kv" data-reveal style="--i:3">
+          <dt>{t(ui.keywords, lang)}</dt>
+          <dd>
+            <ul class="paper__tags">
+              {
+                research.keywords.map((k) => (
+                  <li>
+                    <Tag>{t(k, lang)}</Tag>
+                  </li>
+                ))
+              }
+            </ul>
+          </dd>
+        </div>
+      </dl>
+    </aside>
+
+    <div class="paper__body">
+      <h3 class="paper__title" data-reveal style="--i:1">{research.title}</h3>
+      <p class="lead muted" data-reveal style="--i:2">{t(research.summary, lang)}</p>
+    </div>
+  </div>
+
+  <RowLine />
+  <div class="findings">
+    <div class="wrap g12 findings__grid">
+      <div class="findings__label" data-reveal="fade">
+        <p class="mono-s">{t(ui.keyFindings, lang)}</p>
+        <p class="small muted">{t(ui.fromArticle, lang)}</p>
+      </div>
+      <dl class="findings__cells">
+        {
+          research.findings.map((f, i) => (
+            <div class="finding" data-reveal style={`--i:${i + 1}`}>
+              <dt class="sr-only">{t(f.label, lang)}</dt>
+              <dd class="stat" data-count={f.value}>
+                {f.value}
+              </dd>
+              <dd class="mono-s" aria-hidden="true">
+                {t(f.label, lang)}
+              </dd>
+              <dd class="small muted">{t(f.note, lang)}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+  <RowLine />
+
+  {
+    abstract && (
+      <>
+        <details class="abstract">
+          <summary class="wrap g12">
+            <span class="abstract__title title-m">{t(ui.abstract, lang)}</span>
+            <span class="abstract__toggle mono-s muted">
+              <span class="abstract__open">{fill(t(ui.readAbstract, lang), { count: research.abstractMinutes }, lang)}</span>
+              <span class="abstract__close">{t(ui.hideAbstract, lang)}</span>
+              <Icon name="plus" size={20} class="abstract__icon" />
+            </span>
+          </summary>
+          <div class="wrap g12">
+            <div class="abstract__text">
+              {abstract.split(/\n\s*\n/).map((p) => <p>{p}</p>)}
+            </div>
+          </div>
+        </details>
+        <RowLine />
+      </>
+    )
+  }
+
+  <div class="links wrap g12">
+    <div class="links__row" data-reveal="fade">
+      <TextLink href={research.caseStudyLink.href} icon="arrow-up-right">{t(research.caseStudyLink.label, lang)}</TextLink>
+      {
+        research.doi ? (
+          <TextLink href={research.doi}>{t(ui.readPaper, lang)}</TextLink>
+        ) : (
+          <span class="mono-s muted">{t(ui.doiPending, lang)}</span>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .paper {
+    padding-block: 40px 48px;
+    row-gap: 32px;
+  }
+  .paper__meta {
+    grid-column: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    color: var(--accent-text);
+  }
+  .paper__facts {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+  }
+  .paper__lead {
+    color: var(--accent-text);
+    font-weight: 500;
+    font-size: 15px !important;
+  }
+  .paper__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .paper__body {
+    grid-column: 4 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .paper__title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(26px, 20px + 1.95vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .paper__body .lead {
+    max-width: 48em;
+  }
+
+  /* Key findings band */
+  .findings {
+    background: var(--surface);
+  }
+  .findings__label {
+    grid-column: 1 / span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-block: 28px;
+  }
+  .findings__cells {
+    grid-column: 4 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--gap);
+  }
+  .finding {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 28px 0 32px 24px;
+    border-left: 1px solid var(--line-strong);
+  }
+  .finding .stat {
+    white-space: nowrap;
+  }
+
+  /* Abstract */
+  .abstract summary {
+    list-style: none;
+    cursor: pointer;
+    padding-block: 20px;
+    align-items: center;
+  }
+  .abstract summary::-webkit-details-marker {
+    display: none;
+  }
+  .abstract__title {
+    grid-column: 4 / span 4;
+  }
+  .abstract__toggle {
+    grid-column: 8 / -1;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.3s;
+  }
+  .abstract summary:hover .abstract__toggle {
+    color: var(--fg);
+  }
+  :global(.abstract__icon) {
+    transition: transform 0.5s var(--ease-out);
+  }
+  .abstract[open] :global(.abstract__icon) {
+    transform: rotate(45deg);
+  }
+  .abstract__close,
+  .abstract[open] .abstract__open {
+    display: none;
+  }
+  .abstract[open] .abstract__close {
+    display: inline;
+  }
+  .abstract__text {
+    grid-column: 4 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 48em;
+    padding-bottom: 32px;
+    color: var(--muted);
+    animation: rise 0.6s var(--ease-out);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+
+  .links {
+    padding-top: 12px;
+  }
+  .links__row {
+    grid-column: 4 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 32px;
+  }
+
+  @media (max-width: 1023px) {
+    .paper {
+      padding-block: 28px 32px;
+    }
+    .paper__meta,
+    .paper__body,
+    .findings__label,
+    .findings__cells,
+    .abstract__text,
+    .links__row {
+      grid-column: 1 / -1;
+    }
+    .paper__body {
+      order: -1;
+      gap: 20px;
+    }
+    .findings__label {
+      padding-block: 24px 8px;
+    }
+    .findings__cells {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 0;
+    }
+    .finding {
+      padding: 20px 14px 24px 0;
+      border-left: 0;
+      border-top: 1px solid var(--line-strong);
+    }
+    .finding:nth-child(even) {
+      padding-left: 14px;
+      border-left: 1px solid var(--line-strong);
+    }
+    .abstract__title {
+      grid-column: 1 / span 5;
+    }
+    .abstract__toggle {
+      grid-column: 6 / -1;
+    }
+    .abstract__open,
+    .abstract__close {
+      display: none !important;
+    }
+  }
+</style>

@@ -1,0 +1,485 @@
+---
+import Icon from '../Icon.astro';
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import Tag from '../Tag.astro';
+import { journey } from '../../data/journey';
+import { journeyTypes, ui } from '../../data/ui';
+import type { JourneyType, Lang, Section } from '../../data/types';
+import { journeyPreview, journeySince, journeyYears } from '../../lib/derive';
+import { fill, t } from '../../lib/i18n';
+import { formatRange } from '../../lib/dates';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+
+const total = journey.length;
+const dek = fill(t(section.dek, lang), { count: total, since: journeySince() }, lang);
+const years = journeyYears();
+const types = (Object.keys(journeyTypes) as JourneyType[])
+  .map((type) => ({ type, n: journey.filter((e) => e.type === type).length }))
+  .filter((x) => x.n > 0);
+
+const countLabel = (n: number, open: boolean) =>
+  `${n} ${t(n === 1 ? ui.entry : ui.entries, lang)}${open ? ` · ${t(ui.open, lang)}` : ''}`;
+
+/* Labels the browser script needs */
+const labels = {
+  entry: t(ui.entry, lang),
+  entries: t(ui.entries, lang),
+  open: t(ui.open, lang),
+  showAll: fill(t(ui.showAll, lang), { count: total }, lang),
+  showLess: t(ui.showLess, lang),
+};
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={dek} rule={false} />
+
+  <div class="jr" data-journey data-labels={JSON.stringify(labels)}>
+    <div class="filters wrap g12">
+      <p class="filters__label mono-s muted" data-reveal="fade">{t(ui.filterBy, lang)}</p>
+      <div class="chips" role="group" aria-label={t(ui.filterBy, lang)} data-reveal="fade" style="--i:1">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">
+          <span>{t(ui.all, lang)}</span>
+          <span class="mono-s chip__n">{total}</span>
+        </button>
+        {
+          types.map(({ type, n }) => (
+            <button class="chip" type="button" data-filter={type} aria-pressed="false">
+              <span>{t(journeyTypes[type], lang)}</span>
+              <span class="mono-s chip__n">{n}</span>
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    {
+      years.map(({ year, entries }, yi) => {
+        const open = yi === 0;
+        const preview = journeyPreview(entries, lang);
+        const panelId = `journey-${year}`;
+        return (
+          <div
+            class:list={['year', open && 'is-open']}
+            data-year={year}
+            data-default={open ? 'open' : 'closed'}
+            data-total={entries.length}
+          >
+            <RowLine />
+            <div class="year__grid wrap g12">
+              <button class="year__label" type="button" aria-expanded={open ? 'true' : 'false'} aria-controls={panelId} data-toggle>
+                <span class="year__num">{year}</span>
+                <span class="year__count mono-s" data-count-label>
+                  {countLabel(entries.length, open)}
+                </span>
+                <Icon name="plus" size={20} class="year__icon" />
+              </button>
+
+              <div class="year__right">
+                <div class="collapse collapse--preview">
+                  <div>
+                    <button class="preview" type="button" aria-expanded={open ? 'true' : 'false'} aria-controls={panelId} data-toggle tabindex={open ? -1 : 0}>
+                      <span class="preview__text">
+                        {preview.items.join(' · ')}
+                        {preview.rest > 0 && <span class="muted"> · {fill(t(ui.more, lang), { count: preview.rest }, lang)}</span>}
+                      </span>
+                      <span class="preview__toggle mono-s muted">
+                        {t(ui.expand, lang)}
+                        <Icon name="plus" size={20} />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <div class="collapse collapse--entries" id={panelId}>
+                  <ol>
+                    {entries.map((e) => (
+                      <li class="entry" data-type={e.type}>
+                        <span class="entry__date mono-m muted">{formatRange(e.start, e.end, lang)}</span>
+                        <div class="entry__main">
+                          <Tag>{t(journeyTypes[e.type], lang)}</Tag>
+                          <h3 class="title-m">{t(e.title, lang)}</h3>
+                          {e.org && <p class="muted">{t(e.org, lang)}</p>}
+                          {(e.text ?? e.points?.[0]) && <p>{t(e.text ?? e.points?.[0], lang)}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })
+    }
+    <RowLine />
+
+    {
+      years.length > 1 && (
+        <div class="showall wrap g12">
+          <button class="btn btn--secondary showall__btn" type="button" data-show-all aria-pressed="false" style="--nx:0px;--ny:3px">
+            <span class="btn__label" data-show-all-label>
+              {labels.showAll}
+            </span>
+            <Icon name="arrow-down" class="btn__icon" />
+          </button>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  type Labels = { entry: string; entries: string; open: string; showAll: string; showLess: string };
+
+  document.querySelectorAll<HTMLElement>('[data-journey]').forEach((root) => {
+    const labels: Labels = JSON.parse(root.dataset.labels || '{}');
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const years = [...root.querySelectorAll<HTMLElement>('[data-year]')];
+    const showAll = root.querySelector<HTMLButtonElement>('[data-show-all]');
+    const showAllLabel = root.querySelector<HTMLElement>('[data-show-all-label]');
+    let filter = 'all';
+    let allOpen = false;
+
+    const visibleCount = (year: HTMLElement) =>
+      year.querySelectorAll('.entry:not([hidden])').length;
+
+    function setOpen(year: HTMLElement, open: boolean) {
+      year.classList.toggle('is-open', open);
+      year.querySelectorAll('[data-toggle]').forEach((b) => b.setAttribute('aria-expanded', String(open)));
+      year.querySelector<HTMLElement>('.preview')?.setAttribute('tabindex', open ? '-1' : '0');
+      const n = visibleCount(year);
+      const label = year.querySelector('[data-count-label]');
+      if (label) label.textContent = `${n} ${n === 1 ? labels.entry : labels.entries}${open ? ` · ${labels.open}` : ''}`;
+    }
+
+    function replay(year: HTMLElement) {
+      year.querySelectorAll<HTMLElement>('.entry:not([hidden])').forEach((el, i) => {
+        el.classList.remove('is-entering');
+        void el.offsetWidth; // restart the animation
+        el.style.setProperty('--i', String(i));
+        el.classList.add('is-entering');
+      });
+    }
+
+    function applyFilter(type: string) {
+      filter = type;
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === type)));
+      years.forEach((year) => {
+        year.querySelectorAll<HTMLElement>('.entry').forEach((e) => {
+          e.hidden = type !== 'all' && e.dataset.type !== type;
+        });
+        const n = visibleCount(year);
+        year.hidden = n === 0;
+        const open = type === 'all' ? allOpen || year.dataset.default === 'open' : n > 0;
+        setOpen(year, open);
+        if (open) replay(year);
+      });
+    }
+
+    chips.forEach((chip) => chip.addEventListener('click', () => applyFilter(chip.dataset.filter || 'all')));
+
+    years.forEach((year) =>
+      year.querySelectorAll('[data-toggle]').forEach((btn) =>
+        btn.addEventListener('click', () => {
+          const open = !year.classList.contains('is-open');
+          setOpen(year, open);
+          if (open) replay(year);
+        }),
+      ),
+    );
+
+    showAll?.addEventListener('click', () => {
+      allOpen = !allOpen;
+      showAll.setAttribute('aria-pressed', String(allOpen));
+      if (showAllLabel) showAllLabel.textContent = allOpen ? labels.showLess : labels.showAll;
+      showAll.classList.toggle('is-less', allOpen);
+      years.forEach((year) => {
+        if (year.hidden) return;
+        const open = allOpen || (filter === 'all' ? year.dataset.default === 'open' : true);
+        const was = year.classList.contains('is-open');
+        setOpen(year, open);
+        if (open && !was) replay(year);
+      });
+      if (!allOpen) root.closest('section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+<style>
+  /* Filters */
+  .filters {
+    padding-block: 0 32px;
+    align-items: center;
+    row-gap: 12px;
+  }
+  .filters__label {
+    grid-column: 1 / span 3;
+  }
+  .chips {
+    grid-column: 4 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--line-strong);
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 20px;
+    transition:
+      background-color 0.35s,
+      color 0.35s,
+      border-color 0.35s;
+  }
+  .chip:hover {
+    border-color: var(--fg);
+  }
+  .chip__n {
+    color: var(--muted);
+    transition: color 0.35s;
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+  .chip[aria-pressed='true'] .chip__n {
+    color: var(--ink);
+  }
+
+  /* Year rows */
+  .year__grid {
+    align-items: stretch;
+  }
+  .year__label {
+    grid-column: 1 / span 3;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-block: 24px;
+    color: var(--muted);
+    isolation: isolate;
+    transition: color 0.5s var(--ease-out);
+  }
+  /* Blue block that grows in when a year opens */
+  .year__label::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.7s var(--ease-in-out);
+  }
+  .year__label:hover {
+    color: var(--fg);
+  }
+  .year__num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 48px;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    transition:
+      font-size 0.6s var(--ease-out),
+      padding 0.6s var(--ease-out);
+  }
+  :global(.year__icon) {
+    display: none;
+  }
+  .is-open .year__label {
+    color: var(--ink);
+    padding-inline: 24px;
+  }
+  .is-open .year__label::before {
+    transform: scaleY(1);
+  }
+  .is-open .year__num {
+    font-size: 72px;
+    line-height: 1;
+  }
+
+  .year__right {
+    grid-column: 4 / -1;
+    min-width: 0;
+  }
+
+  /* Smooth height animation without measuring: 0fr ↔ 1fr */
+  .collapse {
+    display: grid;
+    transition:
+      grid-template-rows 0.7s var(--ease-in-out),
+      opacity 0.5s var(--ease-out);
+  }
+  .collapse > * {
+    overflow: hidden;
+    min-height: 0;
+  }
+  .collapse--preview {
+    grid-template-rows: 1fr;
+  }
+  .collapse--entries {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  .is-open .collapse--preview {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  .is-open .collapse--entries {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    padding-block: 24px;
+    min-height: 120px;
+  }
+  .preview__text {
+    max-width: 40em;
+  }
+  .preview__toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.3s;
+  }
+  .preview:hover .preview__toggle {
+    color: var(--fg);
+  }
+
+  .entry {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    column-gap: var(--gap);
+    padding-block: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry:last-child {
+    border-bottom: 0;
+  }
+  .entry__date {
+    grid-column: 1 / span 2;
+  }
+  .entry__main {
+    grid-column: 3 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .entry__main :global(.tag) {
+    margin-bottom: 4px;
+  }
+  .entry:global(.is-entering) {
+    animation: entry-in 0.7s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+  @keyframes entry-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
+
+  .showall {
+    padding-top: 32px;
+  }
+  .showall__btn {
+    grid-column: 4 / span 6;
+    justify-self: start;
+  }
+  .showall__btn:global(.is-less) :global(.btn__icon) {
+    transform: rotate(180deg);
+  }
+
+  @media (max-width: 1023px) {
+    .filters {
+      padding-bottom: 24px;
+    }
+    .filters__label {
+      display: none;
+    }
+    .chips {
+      grid-column: 1 / -1;
+    }
+    .chip {
+      padding: 0 14px;
+    }
+    .year__label,
+    .year__right {
+      grid-column: 1 / -1;
+    }
+    .year__label {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding-block: 16px;
+      margin-inline: calc(var(--pad-x) * -1);
+      padding-inline: var(--pad-x);
+    }
+    .is-open .year__label {
+      padding-inline: var(--pad-x);
+      padding-block: 14px;
+    }
+    .year__num {
+      font-size: 30px;
+    }
+    .is-open .year__num {
+      font-size: 40px;
+    }
+    :global(.year__icon) {
+      display: block;
+      margin-left: auto;
+      transition: transform 0.5s var(--ease-out);
+    }
+    .is-open :global(.year__icon) {
+      transform: rotate(45deg);
+    }
+    .collapse--preview {
+      display: none;
+    }
+    .entry {
+      grid-template-columns: 1fr;
+      padding-block: 20px;
+      row-gap: 6px;
+    }
+    .entry__date,
+    .entry__main {
+      grid-column: 1 / -1;
+    }
+    .entry__date {
+      font-size: 12px;
+      line-height: 16px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .showall {
+      padding-top: 24px;
+    }
+    .showall__btn {
+      grid-column: 1 / -1;
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+</style>

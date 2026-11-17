@@ -1,0 +1,176 @@
+---
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import { otherRoles, otherRolesLabel, roles } from '../../data/experience';
+import type { Lang, Section } from '../../data/types';
+import { fill, pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const dek = fill(t(section.dek, lang), { count: roles.length }, lang);
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={dek} />
+
+  {
+    roles.map((r, i) => (
+      <>
+        {i > 0 && <RowLine />}
+        <article class:list={['role wrap g12', i === 0 && 'role--latest']}>
+          <p class="role__index mono-s" data-reveal="fade">
+            {pad2(i + 1)} / {pad2(roles.length)}
+          </p>
+          <p class="role__date mono-m" data-reveal="fade" style="--i:1">
+            {t(r.date, lang)}
+          </p>
+          <div class="role__main">
+            <h3 class="title-l mask" data-reveal="mask" style="--i:1">
+              <span>{t(r.title, lang)}</span>
+            </h3>
+            <p class="muted" data-reveal style="--i:2">
+              {t(r.org, lang)}
+            </p>
+            <ul class="role__bullets" data-reveal style="--i:3">
+              {r.bullets.map((b) => (
+                <li>{t(b, lang)}</li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      </>
+    ))
+  }
+
+  {
+    otherRoles.length > 0 && (
+      <>
+        <RowLine />
+        <div class="others wrap g12">
+          <p class="role__index mono-s muted" data-reveal="fade">
+            {t(otherRolesLabel.kicker, lang)}
+          </p>
+          <p class="role__date mono-m muted" data-reveal="fade" style="--i:1">
+            {t(otherRolesLabel.title, lang)}
+          </p>
+          <ul class="others__grid">
+            {otherRoles.map((o, i) => (
+              <li data-reveal style={`--i:${i + 1}`}>
+                <span>{t(o.title, lang)}</span>
+                <span class="mono-s muted">{t(o.type, lang)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </>
+    )
+  }
+  <RowLine />
+</section>
+
+<style>
+  .role {
+    padding-block: 36px;
+    row-gap: 10px;
+    transition: background-color 0.4s;
+  }
+  .role__index {
+    grid-column: 1 / span 3;
+    color: var(--muted);
+    padding-top: 2px;
+  }
+  .role__date {
+    grid-column: 4 / span 2;
+    color: var(--muted);
+  }
+  .role--latest .role__index,
+  .role--latest .role__date {
+    color: var(--accent-text);
+  }
+  .role__main {
+    grid-column: 6 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .role__bullets {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 2px;
+    max-width: 46em;
+  }
+  .role__bullets li {
+    position: relative;
+    padding-left: 22px;
+  }
+  .role__bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.8em;
+    width: 10px;
+    height: 1px;
+    background: var(--line-strong);
+    transition:
+      background-color 0.3s,
+      width 0.4s var(--ease-out);
+  }
+  .role:hover .role__bullets li::before {
+    background: var(--accent);
+    width: 14px;
+  }
+
+  .others {
+    padding-block: 28px;
+    row-gap: 12px;
+  }
+  .others__grid {
+    grid-column: 6 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+  }
+  .others__grid li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-block: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .others__grid li .mono-s {
+    flex: none;
+  }
+
+  @media (max-width: 1023px) {
+    .role {
+      padding-block: 24px 28px;
+    }
+    .role__index {
+      grid-column: 1 / span 4;
+    }
+    .role__date {
+      grid-column: 5 / -1;
+      text-align: right;
+      font-size: 12px;
+      line-height: 16px;
+      padding-top: 2px;
+    }
+    .role__main,
+    .others__grid {
+      grid-column: 1 / -1;
+    }
+    .role__main {
+      margin-top: 6px;
+    }
+  }
+  @media (max-width: 640px) {
+    .others__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

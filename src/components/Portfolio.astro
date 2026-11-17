@@ -1,0 +1,45 @@
+---
+/* The whole page. Section order comes from src/data/sections.ts. */
+import Base from '../layouts/Base.astro';
+import Hero from './sections/Hero.astro';
+import FeaturedWork from './sections/FeaturedWork.astro';
+import Experience from './sections/Experience.astro';
+import Research from './sections/Research.astro';
+import Projects from './sections/Projects.astro';
+import Skills from './sections/Skills.astro';
+import Certificates from './sections/Certificates.astro';
+import Journey from './sections/Journey.astro';
+import About from './sections/About.astro';
+import Gallery from './sections/Gallery.astro';
+import Contact from './sections/Contact.astro';
+import type { Lang, SectionId } from '../data/types';
+import { visibleSections } from '../lib/derive';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const components: Record<SectionId, any> = {
+  work: FeaturedWork,
+  experience: Experience,
+  research: Research,
+  projects: Projects,
+  skills: Skills,
+  certificates: Certificates,
+  journey: Journey,
+  about: About,
+  gallery: Gallery,
+  contact: Contact,
+};
+---
+
+<Base lang={lang}>
+  <Hero lang={lang} />
+  {
+    visibleSections().map((section) => {
+      const Component = components[section.id];
+      return <Component lang={lang} section={section} />;
+    })
+  }
+</Base>

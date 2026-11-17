@@ -1,0 +1,41 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from '../lib/icons';
+import { exists, isDev, isExternal, url } from '../lib/assets';
+import { nudge } from '../lib/nudge';
+
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'dark' | 'outline-ink';
+  icon?: IconName;
+  size?: 'md' | 'sm';
+  download?: boolean;
+  block?: boolean;
+  class?: string;
+}
+
+const { href, variant = 'primary', icon, size = 'md', download, block, class: className } = Astro.props;
+const missing = !exists(href);
+const external = isExternal(href);
+// Missing link/file: dashed placeholder in dev, nothing in the published site.
+const render = !missing || isDev;
+---
+
+{
+  render && (
+    <a
+      class:list={['btn', `btn--${variant}`, size === 'sm' && 'btn--sm', block && 'btn--block', missing && 'is-missing', className]}
+      href={missing ? undefined : url(href)}
+      download={download && !missing ? '' : undefined}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener' : undefined}
+      title={missing ? `Missing: ${href || 'add a link'} (see README)` : undefined}
+      style={nudge(icon)}
+    >
+      <span class="btn__label">
+        <slot />
+      </span>
+      {icon && <Icon name={icon} class="btn__icon" />}
+    </a>
+  )
+}

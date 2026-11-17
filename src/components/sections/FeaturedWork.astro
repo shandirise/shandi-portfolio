@@ -1,0 +1,344 @@
+---
+import Button from '../Button.astro';
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import Tag from '../Tag.astro';
+import { featured } from '../../data/featured';
+import { ui } from '../../data/ui';
+import type { Lang, Section } from '../../data/types';
+import { exists, isDev, url } from '../../lib/assets';
+import { pad2, t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+
+/* Size the big cover figure so it fills ~83% of the cover's width. */
+const figureSize = (text: string) => `${(83 / (text.length * 0.55)).toFixed(2)}cqi`;
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} dek={t(section.dek, lang)} />
+
+  {
+    featured.map((cs, i) => {
+      const flip = i % 2 === 1;
+      const image = cs.cover.image && (exists(cs.cover.image) || isDev) ? cs.cover.image : '';
+      const actionIcon = cs.action?.href.startsWith('#') ? 'arrow-down' : 'arrow-up-right';
+      return (
+        <>
+          {i > 0 && <RowLine />}
+          <article class:list={['cs wrap g12', flip && 'cs--flip']} id={cs.id}>
+            <div
+              class:list={['cover', `cover--${cs.cover.tone}`, image && 'cover--image']}
+              data-reveal={flip ? 'wipe-x-rev' : 'wipe-x'}
+            >
+              <div class="cover__top mono-s">
+                <span>
+                  {t(ui.caseStudy, lang)} {pad2(i + 1)}
+                </span>
+                <span class="cover__status">
+                  {cs.cover.live && <span class="live-dot" style="--dot: var(--ink)" />}
+                  {t(cs.cover.status, lang)}
+                </span>
+              </div>
+
+              {image ? (
+                <img
+                  class:list={['cover__img', !exists(image) && 'is-missing']}
+                  src={url(image)}
+                  alt={`${t(cs.title, lang)} screenshot`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div class="cover__figure">
+                  <span class="mask" data-reveal="mask" style="--i:4">
+                    <span class="cover__fig" style={`--fig:${figureSize(cs.cover.figure)}`}>
+                      {cs.cover.figure}
+                    </span>
+                  </span>
+                  {cs.cover.caption && (
+                    <span class="cover__cap" data-reveal style="--i:7">
+                      {t(cs.cover.caption, lang)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <dl class="cover__facts">
+                {cs.cover.facts.map((f) => (
+                  <div class="kv">
+                    <dt>{t(f.key, lang)}</dt>
+                    <dd>{t(f.value, lang)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div class="details">
+              <p class="mono-s accent-text" data-reveal>
+                {pad2(i + 1)} — {t(cs.kicker, lang)}
+              </p>
+              <div class="details__title">
+                <h3 class="h3 mask" data-reveal="mask" style="--i:1">
+                  <span>{t(cs.title, lang)}</span>
+                </h3>
+                <p class="lead" data-reveal style="--i:2">
+                  {t(cs.oneLiner, lang)}
+                </p>
+              </div>
+
+              <dl class="details__facts" data-reveal style="--i:3">
+                {cs.facts.map((f) => (
+                  <div class="kv">
+                    <dt>{t(f.key, lang)}</dt>
+                    <dd>{t(f.value, lang)}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div class="part" data-reveal style="--i:4">
+                <p class="mono-s muted">{t(ui.myPart, lang)}</p>
+                <ol class="part__list">
+                  {cs.myPart.map((p, k) => (
+                    <li>
+                      <span class="mono-s accent-text">{pad2(k + 1)}</span>
+                      <span>{t(p, lang)}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <ul class="details__stack" aria-label={ui.stack} data-reveal style="--i:5">
+                {cs.stack.map((s) => (
+                  <li>
+                    <Tag>{s}</Tag>
+                  </li>
+                ))}
+              </ul>
+
+              {(cs.action || cs.note) && (
+                <div class="details__actions" data-reveal style="--i:6">
+                  {cs.action && (
+                    <Button
+                      href={cs.action.href}
+                      variant={cs.action.style ?? 'primary'}
+                      icon={actionIcon}
+                    >
+                      {t(cs.action.label, lang)}
+                    </Button>
+                  )}
+                  {cs.note && <span class="mono-s muted">{t(cs.note, lang)}</span>}
+                </div>
+              )}
+            </div>
+          </article>
+        </>
+      );
+    })
+  }
+</section>
+
+<style>
+  .cs {
+    scroll-margin-top: var(--header-h);
+  }
+
+  /* Cover */
+  .cover {
+    grid-column: 1 / span 6;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 32px;
+    min-height: clamp(300px, 45vw, 657px);
+    padding: 28px 32px 32px;
+  }
+  .cs--flip .cover {
+    grid-column: 7 / -1;
+    grid-row: 1;
+  }
+  .cover--accent {
+    background: var(--accent);
+    color: var(--ink);
+  }
+  .cover--surface {
+    background: var(--surface);
+    color: var(--fg);
+  }
+  /* Faint vertical grid — drifts on hover */
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: linear-gradient(to right, transparent calc(100% - 1px), rgb(20 23 28 / 0.16) 0);
+    background-size: calc(100% / 6) 100%;
+    background-repeat: repeat-x;
+    background-position: 0 0;
+    transition: background-position 1.8s var(--ease-out);
+  }
+  .cover:hover::before {
+    background-position: 48px 0;
+  }
+  .cover__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .cover__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cover__figure {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cover__fig {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(48px, var(--fig), 168px);
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+  }
+  .cover__cap {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(20px, 5cqi, 32px);
+    line-height: 1.2;
+  }
+  .cover__img {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cover--image .cover__top,
+  .cover--image .cover__facts {
+    position: relative;
+  }
+  .cover__facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .cover__facts .kv {
+    gap: 4px;
+    border-top-color: currentColor;
+  }
+  .cover__facts .kv dt {
+    color: inherit;
+  }
+
+  /* Details */
+  .details {
+    grid-column: 7 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 48px 0 48px 48px;
+  }
+  .cs--flip .details {
+    grid-column: 1 / span 6;
+    grid-row: 1;
+    padding: 48px 48px 48px 0;
+  }
+  .details__title {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .details__facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    width: 100%;
+  }
+  .part {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .part__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+  .part__list li {
+    display: flex;
+    gap: 12px;
+    padding-block: 10px;
+    border-top: 1px solid var(--line);
+    line-height: 1.6;
+  }
+  .part__list li .mono-s {
+    padding-top: 4px;
+  }
+  .details__stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .details__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+  }
+
+  @media (max-width: 1023px) {
+    .cover,
+    .cs--flip .cover,
+    .details,
+    .cs--flip .details {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .cover,
+    .cs--flip .cover {
+      margin-inline: calc(var(--pad-x) * -1);
+      padding: 16px var(--pad-x) 18px;
+      min-height: 300px;
+      gap: 20px;
+    }
+    .details,
+    .cs--flip .details {
+      padding: 24px 0 32px;
+      gap: 18px;
+    }
+    .cover__facts {
+      gap: 12px;
+    }
+    .cover__facts .kv {
+      padding-top: 8px;
+      gap: 2px;
+    }
+  }
+  @media (max-width: 640px) {
+    .details__facts {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .details__facts .kv {
+      padding-block: 10px;
+      gap: 4px;
+    }
+    .part__list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,46 @@
+/* ==========================================================================
+   Design tokens — change the look of the whole site from here.
+   Values are taken straight from "Shandi Portfolio v3.fig".
+   ========================================================================== */
+
+:root {
+  /* Colour */
+  --bg: #222831; /* page background */
+  --surface: #393e46; /* highlight bands, cards, hovered rows */
+  --bg-deep: #1b2026; /* footer */
+  --fg: #eeeeee; /* main text */
+  --muted: #a7a9ac; /* secondary text */
+  --accent: #0092ca; /* brand blue — fills */
+  --accent-hover: #10a3dc; /* brand blue — hover */
+  --accent-text: #4db3da; /* brand blue — small text on dark */
+  --ink: #14171c; /* text on blue */
+  --line: #393e46; /* hairlines */
+  --line-strong: #5a6069; /* stronger hairlines, tag borders */
+  --line-on-accent: #07678d; /* hairlines on blue */
+  --missing: #e0a43a; /* dashed outline for things you still need to add (dev only) */
+
+  /* Fonts */
+  --font-display: 'Archivo Variable', 'Archivo', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Schibsted Grotesk Variable', 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Layout — 12 columns, 24px gutters, 72px margins at 1440px wide */
+  --max: 1440px;
+  --pad-x: clamp(20px, 5vw, 72px);
+  --gap: clamp(16px, 1.67vw, 24px);
+  --section-space: clamp(88px, 9.5vw, 136px);
+  --head-gap: clamp(24px, 3.9vw, 56px);
+  --header-h: 76px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --reveal: 0.9s;
+  --stagger: 70ms;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --header-h: 64px;
+  }
+}

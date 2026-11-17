@@ -1,0 +1,152 @@
+---
+import RowLine from '../RowLine.astro';
+import SectionHead from '../SectionHead.astro';
+import { about } from '../../data/about';
+import { profile } from '../../data/profile';
+import type { Lang, Section } from '../../data/types';
+import { exists, isDev, url } from '../../lib/assets';
+import { t } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  section: Section & { num: number };
+}
+const { lang, section } = Astro.props;
+const hasPortrait = exists(about.portrait.src);
+const initials = profile.name
+  .split(' ')
+  .map((w) => w[0])
+  .join('');
+---
+
+<section class="section" id={section.id}>
+  <SectionHead num={section.num} title={t(section.title, lang)} />
+
+  <div class="about wrap g12">
+    <figure class:list={['portrait', !hasPortrait && isDev && 'is-missing']} data-reveal="wipe">
+      {
+        hasPortrait ? (
+          <img src={url(about.portrait.src)} alt={t(about.portrait.alt, lang)} loading="lazy" decoding="async" />
+        ) : (
+          <div class="portrait__fallback" aria-hidden="true">
+            <span class="portrait__initials">{initials}</span>
+            {isDev && (
+              <span class="mono-s muted">
+                Add {about.portrait.src.replace(/^\//, 'public/')}
+              </span>
+            )}
+          </div>
+        )
+      }
+    </figure>
+
+    <div class="about__text">
+      <p class="about__summary" data-reveal>{t(about.summary, lang)}</p>
+      <dl class="about__facts">
+        {
+          about.facts.map((f, i) => (
+            <div class="kv" data-reveal style={`--i:${i + 1}`}>
+              <dt>{t(f.key, lang)}</dt>
+              {f.lines.map((line) => (
+                <dd class="body">{t(line, lang)}</dd>
+              ))}
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+  <RowLine />
+</section>
+
+<style>
+  .portrait {
+    grid-column: 1 / span 4;
+    position: relative;
+    overflow: hidden;
+    min-height: 100%;
+    aspect-ratio: 4 / 5;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+  }
+  .portrait img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .portrait__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background:
+      linear-gradient(to right, transparent calc(100% - 1px), rgb(90 96 105 / 0.35) 0) 0 0 / 25% 100%,
+      var(--surface);
+  }
+  .portrait__initials {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(96px, 12vw, 180px);
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+    color: var(--bg);
+  }
+  .about__text {
+    grid-column: 6 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-block: 48px;
+  }
+  .about__summary {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(18px, 15.5px + 0.6vw, 22px);
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    max-width: 34em;
+  }
+  .about__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .about__facts .kv {
+    padding-top: 14px;
+  }
+
+  @media (max-width: 1023px) {
+    .portrait {
+      grid-column: 1 / -1;
+      max-width: 520px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .about__text {
+      grid-column: 1 / -1;
+      padding-block: 24px 32px;
+      gap: 24px;
+    }
+    .about__summary {
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+  }
+  @media (max-width: 640px) {
+    .about__facts {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .about__facts .kv {
+      padding-block: 10px;
+      gap: 4px;
+    }
+  }
+</style>

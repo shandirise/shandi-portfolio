@@ -1,0 +1,30 @@
+{
+  "name": "shandi-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio of Shandi Himawan, fullstack developer — Astro site in English and Indonesian with a CV generated from the same content.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/schibsted-grotesk": "5.3.0",
+    "astro": "5.18.2",
+    "pdfkit": "0.20.2",
+    "simple-icons": "16.38.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@types/node": "^22.15.3",
+    "@types/pdfkit": "^0.17.7",
+    "typescript": "^5.8.3"
+  }
+}
