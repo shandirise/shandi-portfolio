@@ -3,7 +3,7 @@
 Personal portfolio of **Shandi Himawan**, fullstack developer from Purwokerto, Indonesia.
 A fast, static site in **English and Indonesian**, built with [Astro](https://astro.build) from an editorial grid design made in Figma.
 
-**Live:** _deploying…_
+**Live:** [shandi-portfolio.vercel.app](https://shandi-portfolio.vercel.app) · [Bahasa Indonesia](https://shandi-portfolio.vercel.app/id/) · CV: [EN](https://shandi-portfolio.vercel.app/cv/Shandi-Himawan-CV-EN.pdf) / [ID](https://shandi-portfolio.vercel.app/cv/Shandi-Himawan-CV-ID.pdf)
 
 ## Highlights
 
