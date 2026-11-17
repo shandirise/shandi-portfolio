@@ -6,8 +6,7 @@ dist/
 .astro/
 
 # local env & deploy settings
-.env
-.env.*
+.env*
 .vercel/
 
 # logs

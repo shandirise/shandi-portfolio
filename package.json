@@ -5,7 +5,7 @@
   "private": true,
   "description": "Portfolio of Shandi Himawan, fullstack developer — Astro site in English and Indonesian with a CV generated from the same content.",
   "engines": {
-    "node": ">=22"
+    "node": ">=22 <25"
   },
   "scripts": {
     "dev": "astro dev",
