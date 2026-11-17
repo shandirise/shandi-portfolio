@@ -28,7 +28,15 @@ if (reduceMotion || !('IntersectionObserver' in window)) {
     },
     { rootMargin: '0px 0px -8% 0px', threshold: 0 },
   );
-  revealables.forEach((el) => io.observe(el));
+  // Anything already on screen at load (e.g. the hero buttons near the bottom edge)
+  // animates in right away; the rest waits until it is scrolled into view.
+  const onScreen: HTMLElement[] = [];
+  revealables.forEach((el) => {
+    if (el.getBoundingClientRect().top < window.innerHeight) onScreen.push(el);
+    else io.observe(el);
+  });
+  // Two frames, so the hidden starting state is painted first and the transition runs.
+  requestAnimationFrame(() => requestAnimationFrame(() => onScreen.forEach((el) => el.classList.add('is-in'))));
 }
 
 /* 2 ── Count-up numbers ───────────────────────────────────────────── */
